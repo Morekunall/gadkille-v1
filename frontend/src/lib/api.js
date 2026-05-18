@@ -20,6 +20,11 @@ export function getApiBaseUrl() {
     return envUrl.replace(/\/$/, '');
   }
 
+  // Hosted frontend without VITE_API_URL at build time (e.g. Vercel env missing)
+  if (!onLocalhost) {
+    return 'https://gadkille-backend-clean.onrender.com/api';
+  }
+
   return '/api';
 }
 

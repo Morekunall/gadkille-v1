@@ -55,8 +55,6 @@ const HomePage = () => {
           setShowAuthModal(true);
         }
       });
-    } else if (!user) {
-      setShowAuthModal(true);
     }
   }, [user, navigate, searchParams, authenticateWithToken]);
 
@@ -64,12 +62,14 @@ const HomePage = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [fortsRes, historiesRes] = await Promise.all([
-          axios.get(`/forts`),
-          axios.get(`/history`)
-        ]);
+        const fortsRes = await axios.get('/forts');
         setForts(fortsRes.data || []);
-        setHistories(historiesRes.data || []);
+        try {
+          const historiesRes = await axios.get('/history');
+          setHistories(historiesRes.data || []);
+        } catch {
+          setHistories([]);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
