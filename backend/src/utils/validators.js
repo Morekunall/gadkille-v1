@@ -19,7 +19,12 @@ const registerRules = [
   body('password')
     .matches(PASSWORD_REGEX)
     .withMessage('Password must be 8+ chars with upper, lower, and a number'),
-  body('phone').optional({ checkFalsy: true }).trim().isLength({ max: 20 }),
+  body('phone')
+    .trim()
+    .notEmpty()
+    .withMessage('Mobile number is required')
+    .matches(/^[+]?[\d\s-]{10,15}$/)
+    .withMessage('Enter a valid 10-digit mobile number'),
 ];
 
 const loginRules = [
@@ -51,6 +56,15 @@ const resetPasswordRules = [
     .withMessage('Password must be 8+ chars with upper, lower, and a number'),
 ];
 
+const completeProfileRules = [
+  body('phone')
+    .trim()
+    .notEmpty()
+    .withMessage('Phone number is required')
+    .matches(/^[+]?[\d\s-]{10,15}$/)
+    .withMessage('Enter a valid 10-digit mobile number'),
+];
+
 module.exports = {
   handleValidation,
   registerRules,
@@ -60,5 +74,6 @@ module.exports = {
   resendVerificationRules,
   forgotPasswordRules,
   resetPasswordRules,
+  completeProfileRules,
   PASSWORD_REGEX,
 };

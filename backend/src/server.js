@@ -6,6 +6,9 @@ const morgan = require('morgan');
 const path = require('path');
 const connectDB = require('./config/db');
 const ensureAdminUser = require('./utils/ensureAdminUser');
+const ensureSeedForts = require('./utils/ensureSeedForts');
+const repairFortMedia = require('./utils/repairFortMedia');
+const verifyEmailConfig = require('./utils/verifyEmailConfig');
 
 const authRoutes = require('./routes/authRoutes');
 const fortRoutes = require('./routes/fortRoutes');
@@ -68,6 +71,7 @@ app.use(morgan('dev'));
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.use('/images', express.static(path.join(process.cwd(), 'uploads', 'images')));
 
+<<<<<<< HEAD
 // Root URL (Render “Open app” / health probes often GET `/` — API is under `/api`)
 app.get('/', (req, res) => {
   res.json({
@@ -75,6 +79,10 @@ app.get('/', (req, res) => {
     message: 'Gadkille API',
     docs: 'Use /api/health and routes under /api/*',
   });
+=======
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', message: 'Gadkille API', docs: 'Use /api/health and /api/* routes' });
+>>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
 });
 
 // API routes
@@ -112,8 +120,18 @@ const PORT = Number(process.env.PORT) || 5000;
 const HOST = '0.0.0.0';
 
 const startServer = async () => {
+<<<<<<< HEAD
   app.listen(PORT, HOST, () => {
     console.log(`Server listening on ${HOST}:${PORT}`);
+=======
+  await connectDB();
+  await ensureAdminUser();
+  await ensureSeedForts();
+  await repairFortMedia();
+  await verifyEmailConfig();
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+>>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
   });
 
   try {
