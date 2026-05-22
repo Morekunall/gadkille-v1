@@ -218,49 +218,7 @@ const sendBookingCongratulationsEmail = async ({ email, name, booking }) => {
   return sendMail({ to: email, subject, text, html });
 };
 
-<<<<<<< HEAD
 const sendBookingConfirmationEmail = sendBookingCongratulationsEmail;
-=======
-const sendGoogleRegistrationEmail = async ({ email, name, otp, verifyToken }) => {
-  const verifyLink = `${frontendUrl()}/verify-email?token=${verifyToken}`;
-  const subject = 'Complete your GadKille registration (Google sign-in)';
-  const text = `Hi ${name},\n\nThanks for signing up with Google on GadKille.\n\nYour account verification code: ${otp}\n(Google has already confirmed your email — keep this code for your records.)\n\nVerify link: ${verifyLink}\n\nNext step: add your mobile number so our team can contact you about bookings.\n\nTeam GadKille`;
-
-  const html = emailLayout(
-    'Google registration',
-    `
-      <p>Hi ${escapeHtml(name)},</p>
-      <p>Welcome to <strong>GadKille</strong>! You signed in with Google and your account has been created.</p>
-      <p>Your verification code (for your records):</p>
-      <p style="font-size:28px;font-weight:700;letter-spacing:6px;color:#2F6D66">${otp}</p>
-      <p>Google has already verified your email address. You can also <a href="${verifyLink}" style="color:#2F6D66">open this link</a>.</p>
-      <p><strong>Next:</strong> add your mobile number on the next screen so admins can reach you for fort bookings and trip updates.</p>
-    `
-  );
-
-  return sendMail({ to: email, subject, text, html });
-};
-
-const sendRegistrationCompleteEmail = async ({ email, name, phone }) => {
-  const dashboardLink = `${frontendUrl()}/dashboard`;
-  const subject = 'GadKille registration complete — you are all set!';
-  const text = `Hi ${name},\n\nYour GadKille profile is complete.\nPhone: ${phone}\n\nExplore forts and manage bookings: ${dashboardLink}\n\nTeam GadKille`;
-
-  const html = emailLayout(
-    'Registration complete',
-    `
-      <p>Hi ${escapeHtml(name)},</p>
-      <p>Your registration is <strong>complete</strong>. We saved your contact number <strong>${escapeHtml(phone)}</strong> so our team can reach you about bookings.</p>
-      <p>You can explore forts, book stays, guides, and cabs from your dashboard.</p>
-      <p style="margin-top:20px">
-        <a href="${dashboardLink}" style="display:inline-block;background:#2F6D66;color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:600">Go to dashboard</a>
-      </p>
-    `
-  );
-
-  return sendMail({ to: email, subject, text, html });
-};
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
 
 const sendPasswordResetEmail = async ({ email, name, resetToken }) => {
   const resetLink = `${frontendUrl()}/reset-password?token=${resetToken}`;
@@ -282,12 +240,7 @@ module.exports = {
   sendVerificationEmail,
   sendPasswordResetEmail,
   sendWelcomeEmail,
-<<<<<<< HEAD
   sendBookingCongratulationsEmail,
-=======
-  sendGoogleRegistrationEmail,
-  sendRegistrationCompleteEmail,
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
   sendBookingConfirmationEmail,
   getTransporter,
   frontendUrl,

@@ -22,11 +22,6 @@ const ensureAdminUser = async () => {
   const emailNorm = ADMIN_EMAIL.toLowerCase().trim();
   const existingAdmin = await User.findOne({ email: emailNorm }).select('+password');
 
-<<<<<<< HEAD
-=======
-  const emailNorm = ADMIN_EMAIL.toLowerCase().trim();
-  const existingAdmin = await User.findOne({ email: emailNorm }).select('+password');
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
   if (existingAdmin) {
     let changed = false;
     if (existingAdmin.role !== 'admin') {
@@ -42,10 +37,6 @@ const ensureAdminUser = async () => {
       changed = true;
     }
     if (ADMIN_PASSWORD) {
-<<<<<<< HEAD
-=======
-      const forceSync = process.env.ADMIN_SYNC_PASSWORD === 'true';
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
       let passwordMatches = false;
       if (existingAdmin.password) {
         passwordMatches = await bcrypt.compare(ADMIN_PASSWORD, existingAdmin.password);
@@ -54,15 +45,7 @@ const ensureAdminUser = async () => {
         const salt = await bcrypt.genSalt(10);
         existingAdmin.password = await bcrypt.hash(ADMIN_PASSWORD, salt);
         changed = true;
-<<<<<<< HEAD
         console.log(`[admin] Password synced for ${emailNorm}`);
-=======
-        console.log(
-          forceSync
-            ? '[admin] Password forced from ADMIN_PASSWORD (ADMIN_SYNC_PASSWORD=true)'
-            : '[admin] Password updated to match ADMIN_PASSWORD (hash did not match)'
-        );
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
       }
     }
     if (changed) await existingAdmin.save();

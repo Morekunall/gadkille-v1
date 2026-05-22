@@ -12,11 +12,7 @@ const {
 } = require('../utils/emailService');
 const crypto = require('crypto');
 const querystring = require('querystring');
-<<<<<<< HEAD
 const { sendWelcomeEmailSafe } = require('../utils/sendUserEmails');
-=======
-const { sendWelcomeEmailSafe, sendGoogleSignupEmailsSafe, sendRegistrationCompleteEmailSafe } = require('../utils/sendUserEmails');
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
 const { getAuthJwtSecret } = require('../utils/jwtSecret');
 const {
   handleValidation,
@@ -54,7 +50,6 @@ const sanitizeUser = (user) => ({
   needsPhone: !String(user.phone || '').trim(),
 });
 
-<<<<<<< HEAD
 const generateToken = (user) =>
   jwt.sign({ id: user._id, role: user.role }, getAuthJwtSecret(), {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
@@ -70,64 +65,6 @@ const getGoogleRedirectUri = (req) => {
   const fromEnv = envTrim('GOOGLE_REDIRECT_URI');
   if (fromEnv) return fromEnv;
 
-=======
-const generateToken = (user) => {
-  const secret = getAuthJwtSecret();
-  if (!secret) {
-    throw new Error('JWT_SECRET is not configured');
-  }
-  if (!user?._id) {
-    throw new Error('Cannot issue token: user record has no id');
-  }
-  const expiresIn = envTrim('JWT_EXPIRES_IN') || '7d';
-  return jwt.sign({ id: user._id, role: user.role || 'user' }, secret, { expiresIn });
-};
-
-const findOrCreateGoogleUser = async (profile, emailNorm) => {
-  const displayName =
-    (profile.name && String(profile.name).trim()) ||
-    `${profile.given_name || ''} ${profile.family_name || ''}`.trim() ||
-    emailNorm;
-
-  let user = await User.findOne({ email: emailNorm });
-  if (user) {
-    if (!user.isEmailVerified) {
-      user.isEmailVerified = true;
-      await user.save();
-    }
-    return { user, isNew: false };
-  }
-
-  const hashedPassword = await bcrypt.hash(generateSecureToken(), BCRYPT_ROUNDS);
-  try {
-    user = await User.create({
-      name: displayName,
-      email: emailNorm,
-      password: hashedPassword,
-      phone: '',
-      authProvider: 'google',
-      isEmailVerified: true,
-    });
-    return { user, isNew: true };
-  } catch (err) {
-    if (err.code === 11000) {
-      const existing = await User.findOne({ email: emailNorm });
-      if (existing) return { user: existing, isNew: false };
-    }
-    throw err;
-  }
-};
-
-const envTrim = (key) => {
-  const v = process.env[key];
-  if (typeof v !== 'string') return v;
-  return v.trim().replace(/^\uFEFF/, '').replace(/\uFEFF/g, '');
-};
-
-const getGoogleRedirectUri = (req) => {
-  const fromEnv = envTrim('GOOGLE_REDIRECT_URI');
-  if (fromEnv) return fromEnv;
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
   const forwardedProto = req.headers['x-forwarded-proto'];
   const protocol = forwardedProto || req.protocol || 'https';
   const host = req.headers.host || 'localhost:5000';
@@ -140,72 +77,15 @@ const getGoogleRedirectUri = (req) => {
  */
 const GOOGLE_OAUTH_STATE_PURPOSE = 'gk-google-oauth';
 
-<<<<<<< HEAD
 const signGoogleOAuthState = () => {
-=======
-const normalizeOrigin = (url) => {
-  try {
-    const u = new URL(String(url));
-    return `${u.protocol}//${u.host}`;
-  } catch {
-    return null;
-  }
-};
-
-const isAllowedReturnOrigin = (origin) => {
-  const norm = normalizeOrigin(origin);
-  if (!norm) return false;
-  const configured = [
-    frontendUrl(),
-    envTrim('CLIENT_URL'),
-    envTrim('FRONTEND_URL'),
-    ...(envTrim('CORS_ORIGINS') || '').split(',').map((s) => s.trim()),
-  ]
-    .map(normalizeOrigin)
-    .filter(Boolean);
-  if (configured.includes(norm)) return true;
-  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(norm)) return true;
-  if (
-    /^https?:\/\/[a-z0-9-]+(\.[a-z0-9-]+)*\.(ngrok-free\.app|ngrok-free\.dev|ngrok\.app|ngrok\.io)$/i.test(
-      norm
-    )
-  ) {
-    return true;
-  }
-  return false;
-};
-
-const getReturnUrlFromRequest = (req) => {
-  const raw = req.query.returnTo || req.query.frontend_url;
-  if (raw && isAllowedReturnOrigin(String(raw))) {
-    return normalizeOrigin(String(raw));
-  }
-  const referer = req.get('Referer');
-  if (referer) {
-    const fromReferer = normalizeOrigin(referer);
-    if (fromReferer && isAllowedReturnOrigin(fromReferer)) return fromReferer;
-  }
-  return frontendUrl();
-};
-
-const signGoogleOAuthState = (returnTo) => {
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
   const secret = getAuthJwtSecret();
   if (!secret) {
     throw new Error('JWT_SECRET is required for Google OAuth (signs the state parameter).');
   }
-<<<<<<< HEAD
-=======
-  const safeReturn = isAllowedReturnOrigin(returnTo) ? normalizeOrigin(returnTo) : frontendUrl();
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
   return jwt.sign(
     {
       p: GOOGLE_OAUTH_STATE_PURPOSE,
       n: crypto.randomBytes(16).toString('base64url'),
-<<<<<<< HEAD
-=======
-      r: safeReturn,
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
     },
     secret,
     { expiresIn: '30m', algorithm: 'HS256' }
@@ -214,15 +94,9 @@ const signGoogleOAuthState = (returnTo) => {
 
 const verifyGoogleOAuthState = (state) => {
   try {
-<<<<<<< HEAD
     if (!state || typeof state !== 'string') return false;
     const secret = getAuthJwtSecret();
     if (!secret) return false;
-=======
-    if (!state || typeof state !== 'string') return { ok: false };
-    const secret = getAuthJwtSecret();
-    if (!secret) return { ok: false };
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
     let raw = String(state).trim();
     if (raw.includes(' ') && raw.split('.').length === 3) {
       raw = raw.replace(/ /g, '+');
@@ -231,20 +105,10 @@ const verifyGoogleOAuthState = (state) => {
       algorithms: ['HS256'],
       clockTolerance: 120,
     });
-<<<<<<< HEAD
     return Boolean(payload && payload.p === GOOGLE_OAUTH_STATE_PURPOSE);
   } catch (e) {
     console.warn('[Google OAuth] state verify failed:', e.message);
     return false;
-=======
-    if (!payload || payload.p !== GOOGLE_OAUTH_STATE_PURPOSE) return { ok: false };
-    const returnTo =
-      payload.r && isAllowedReturnOrigin(payload.r) ? normalizeOrigin(payload.r) : frontendUrl();
-    return { ok: true, returnTo };
-  } catch (e) {
-    console.warn('[Google OAuth] state verify failed:', e.message);
-    return { ok: false };
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
   }
 };
 
@@ -254,12 +118,7 @@ const buildGoogleAuthUrl = (req) => {
   if (!clientId) {
     throw new Error('Google OAuth is not configured. Set GOOGLE_CLIENT_ID in your backend .env.');
   }
-<<<<<<< HEAD
   const state = signGoogleOAuthState();
-=======
-  const returnTo = getReturnUrlFromRequest(req);
-  const state = signGoogleOAuthState(returnTo);
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
   const query = querystring.stringify({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -281,10 +140,7 @@ const exchangeGoogleCode = async (code, req) => {
   }
   const tokenUrl = 'https://oauth2.googleapis.com/token';
   const redirectUri = getGoogleRedirectUri(req);
-<<<<<<< HEAD
   console.log('[exchangeGoogleCode] Redirect URI:', redirectUri);
-=======
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
   const params = new URLSearchParams({
     code,
     client_id: clientId,
@@ -299,7 +155,6 @@ const exchangeGoogleCode = async (code, req) => {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params.toString(),
     });
-<<<<<<< HEAD
     
     if (!res.ok) {
       const errorText = await res.text();
@@ -312,16 +167,6 @@ const exchangeGoogleCode = async (code, req) => {
     return data;
   } catch (error) {
     console.error('[exchangeGoogleCode] 🔴 Exception:', error.message);
-=======
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('[exchangeGoogleCode] Token exchange failed', res.status, errorText);
-      return null;
-    }
-    return res.json();
-  } catch (e) {
-    console.error('[exchangeGoogleCode] Exception', e.message);
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
     return null;
   }
 };
@@ -331,7 +176,6 @@ const fetchGoogleUser = async (accessToken) => {
     const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-<<<<<<< HEAD
     
     if (!res.ok) {
       const errorText = await res.text();
@@ -344,15 +188,6 @@ const fetchGoogleUser = async (accessToken) => {
     return data;
   } catch (error) {
     console.error('[fetchGoogleUser] 🔴 Exception:', error.message);
-=======
-    if (!res.ok) {
-      console.error('[fetchGoogleUser]', res.status, await res.text());
-      return null;
-    }
-    return res.json();
-  } catch (e) {
-    console.error('[fetchGoogleUser]', e.message);
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
     return null;
   }
 };
@@ -726,12 +561,8 @@ router.get('/oauth-health', async (req, res) => {
 // @route   GET /api/auth/google
 router.get('/google', (req, res) => {
   try {
-<<<<<<< HEAD
     const { url, state } = buildGoogleAuthUrl(req);
     console.log('[Google OAuth Init] Redirecting to Google. State:', state.slice(0, 8));
-=======
-    const { url } = buildGoogleAuthUrl(req);
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
     res.redirect(url);
   } catch (error) {
     console.error('Google OAuth config error:', error.message);
@@ -742,38 +573,23 @@ router.get('/google', (req, res) => {
 
 // @route   GET /api/auth/google/callback
 router.get('/google/callback', async (req, res) => {
-<<<<<<< HEAD
   const fail = (code, logMsg, extra) => {
     if (logMsg) console.error('[Google OAuth]', logMsg, extra ?? '');
     return res.redirect(`${frontendUrl()}/login?error=${code}`);
-=======
-  let returnBase = frontendUrl();
-  const fail = (code, logMsg, extra) => {
-    if (logMsg) console.error('[Google OAuth]', logMsg, extra ?? '');
-    return res.redirect(`${returnBase}/login?error=${code}`);
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
   };
 
   try {
     const googleErr = req.query.error;
     if (googleErr === 'access_denied') {
-<<<<<<< HEAD
       return fail('google_cancelled', 'User cancelled at Google consent screen');
     }
     if (googleErr) {
       return fail('google_auth_failed', `Google returned error=${googleErr}`);
-=======
-      return fail('google_cancelled', 'User cancelled at Google');
-    }
-    if (googleErr) {
-      return fail('google_auth_failed', `Google error=${googleErr}`);
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
     }
 
     let code = req.query.code;
     if (Array.isArray(code)) code = code[0];
     code = code ? String(code).trim() : '';
-<<<<<<< HEAD
 
     console.log('[Google OAuth Callback] Received:', { code: !!code, state: req.query.state?.slice?.(0, 8) });
 
@@ -788,26 +604,11 @@ router.get('/google/callback', async (req, res) => {
       return fail('google_server', 'JWT_SECRET is not set on the server');
     }
     if (!verifyGoogleOAuthState(state)) {
-=======
-    const stateParam = Array.isArray(req.query.state) ? req.query.state[0] : req.query.state;
-    const state = stateParam ? String(stateParam).trim() : '';
-
-    if (!code) {
-      return fail('google_no_code', 'Missing authorization code');
-    }
-
-    if (!getAuthJwtSecret()) {
-      return fail('google_server', 'JWT_SECRET is not set on the server');
-    }
-    const stateCheck = verifyGoogleOAuthState(state);
-    if (!stateCheck.ok) {
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
       return fail(
         'google_bad_state',
         'OAuth state JWT did not verify — usually JWT_SECRET has a BOM/hidden character on Render, or the tab is stale. Re-save JWT_SECRET (plain text, no quotes).'
       );
     }
-<<<<<<< HEAD
 
     if (!envTrim('GOOGLE_CLIENT_SECRET')) {
       return fail('google_auth_not_configured', 'GOOGLE_CLIENT_SECRET is not set on the server');
@@ -820,22 +621,10 @@ router.get('/google/callback', async (req, res) => {
         'google_token',
         'Failed to get access token (check GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, and Google Console redirect URI match exactly)'
       );
-=======
-    returnBase = stateCheck.returnTo || frontendUrl();
-
-    if (!envTrim('GOOGLE_CLIENT_SECRET')) {
-      return fail('google_auth_not_configured', 'GOOGLE_CLIENT_SECRET not set');
-    }
-
-    const tokenData = await exchangeGoogleCode(code, req);
-    if (!tokenData?.access_token) {
-      return fail('google_token', 'Token exchange failed — check GOOGLE_* env and Google Console redirect URI');
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
     }
 
     console.log('[Google OAuth] Fetching user profile...');
     const profile = await fetchGoogleUser(tokenData.access_token);
-<<<<<<< HEAD
     const emailRaw = profile?.email ? String(profile.email).trim() : '';
     const emailNorm = emailRaw.toLowerCase();
     if (!emailNorm) {
@@ -878,51 +667,6 @@ router.get('/google/callback', async (req, res) => {
       return fail('google_server', 'Duplicate account email (database constraint)', msg);
     }
     return fail('google_server', 'Callback exception', msg);
-=======
-    const emailNorm = profile?.email ? String(profile.email).trim().toLowerCase() : '';
-    if (!emailNorm) {
-      return fail('google_profile', 'No email on Google profile', profile);
-    }
-
-    const { user, isNew } = await findOrCreateGoogleUser(profile, emailNorm);
-
-    if (isNew) {
-      const { otp, verifyToken } = assignVerificationCredentials(user);
-      await user.save();
-      sendGoogleSignupEmailsSafe({ user, otp, verifyToken }).catch((err) =>
-        console.error('[Google OAuth] signup email error:', err.message)
-      );
-    }
-
-    let jwtToken;
-    try {
-      jwtToken = generateToken(user);
-    } catch (tokenErr) {
-      console.error('[Google OAuth] JWT sign failed:', tokenErr.message);
-      return fail('google_jwt', 'Failed to create login token', tokenErr.message);
-    }
-
-    const needsPhone = !String(user.phone || '').trim();
-    if (needsPhone) {
-      return res.redirect(
-        `${returnBase}/complete-profile?token=${encodeURIComponent(jwtToken)}${isNew ? '&new=1' : ''}`
-      );
-    }
-
-    res.redirect(`${returnBase}/?token=${encodeURIComponent(jwtToken)}`);
-  } catch (error) {
-    console.error('Google OAuth callback error:', error.message, error.stack);
-    if (error.name === 'ValidationError') {
-      return fail('google_db', 'User validation failed', error.message);
-    }
-    if (error.name === 'MongoServerError' || error.name === 'MongoNetworkError') {
-      return fail('google_db', 'Database error during Google login', error.message);
-    }
-    if (error.code === 11000) {
-      return fail('google_db', 'Duplicate email in database', error.message);
-    }
-    return fail('google_server', 'Callback exception', error.message);
->>>>>>> 3ce6641800867fc68ec0b4861a0597d0483a0bc5
   }
 });
 
