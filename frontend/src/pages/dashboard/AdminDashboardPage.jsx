@@ -58,30 +58,40 @@ const AdminDashboardPage = () => {
     fort: ''
   });
 
+  const reloadForts = async () => {
+    const fRes = await axios.get(`/forts`);
+    setForts(fRes.data);
+    return fRes.data;
+  };
+
   useEffect(() => {
+    const controller = new AbortController();
     const fetchData = async () => {
       try {
         const [bRes, vRes, fRes, iRes] = await Promise.all([
-          axios.get(`/bookings`),
-          axios.get(`/vendors`),
-          axios.get(`/forts`),
-          axios.get(`/inquiries`)
+          axios.get(`/bookings`, { signal: controller.signal }),
+          axios.get(`/vendors`, { signal: controller.signal }),
+          axios.get(`/forts`, { signal: controller.signal }),
+          axios.get(`/inquiries`, { signal: controller.signal })
         ]);
+        if (controller.signal.aborted) return;
         setBookings(bRes.data);
         setVendors(vRes.data);
         setForts(fRes.data);
         setInquiries(iRes.data);
       } catch (err) {
+        if (controller.signal.aborted || err.code === 'ERR_CANCELED') return;
         showToast(
           'error',
           err.response?.data?.message ||
             (language === 'en' ? 'Unable to load admin data.' : 'ॲडमिन डेटा लोड करता आला नाही.')
         );
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
     fetchData();
+    return () => controller.abort();
   }, []);
 
   const setBookingStatus = async (booking, requestStatus) => {
@@ -510,6 +520,15 @@ const AdminDashboardPage = () => {
   };
 
   const deleteFort = async (fort) => {
+    const fortId = String(fort._id || fort.id || '').trim();
+    if (!fortId) {
+      showToast(
+        'error',
+        language === 'en' ? 'This fort has no id — refresh the page.' : 'किल्ल्याचा id नाही — पेज रिफ्रेश करा.'
+      );
+      return;
+    }
+
     // eslint-disable-next-line no-alert
     const ok = window.confirm(
       language === 'en'
@@ -518,19 +537,25 @@ const AdminDashboardPage = () => {
     );
     if (!ok) return;
     try {
-      await axios.delete(`/forts/${fort._id}`);
-      setForts((prev) => prev.filter((f) => f._id !== fort._id));
-      if (fortForm._id === fort._id) resetFortForm();
+      await axios.delete(`/forts/${fortId}`);
+      if (String(fortForm._id || '') === fortId) resetFortForm();
+      await reloadForts();
       showToast(
         'success',
         language === 'en' ? 'Fort deleted.' : 'किल्ला हटवला.'
       );
     } catch (err) {
-      showToast(
-        'error',
+      const code = err.response?.data?.code;
+      const msg =
         err.response?.data?.message ||
-          (language === 'en' ? 'Unable to delete fort.' : 'किल्ला हटवता आला नाही.')
-      );
+        (code === 'DB_STARTING'
+          ? language === 'en'
+            ? 'Server is still starting — wait a few seconds and try again.'
+            : 'सर्व्हर सुरू होत आहे — काही सेकंद थांबा आणि पुन्हा प्रयत्न करा.'
+          : language === 'en'
+            ? 'Unable to delete fort.'
+            : 'किल्ला हटवता आला नाही.');
+      showToast('error', msg);
     }
   };
 
@@ -1492,12 +1517,14 @@ const AdminDashboardPage = () => {
                     </div>
                     <div className="flex gap-2">
                       <button
+                        type="button"
                         onClick={() => startEditFort(f)}
                         className="text-[10px] font-semibold text-primary hover:text-primaryDark"
                       >
                         {language === 'en' ? 'Edit' : 'संपादित'}
                       </button>
                       <button
+                        type="button"
                         onClick={() => deleteFort(f)}
                         className="text-[10px] font-semibold text-red-600 hover:text-red-700"
                       >

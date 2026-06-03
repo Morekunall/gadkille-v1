@@ -8,6 +8,7 @@ import { useForts } from '../hooks/useForts';
 import { useAuthOAuthCallback } from '../hooks/useAuthOAuthCallback';
 import { useUi } from '../context/UiContext';
 import VideoModal from '../components/VideoModal';
+import heroImage from '../assets/gad-yatra-hero.png';
 
 const featureData = [
   { icon: '🚌', title: 'Transport', description: 'Smart route options for buses, cabs, and self-drive trips.' },
@@ -44,9 +45,6 @@ const HomePage = () => {
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [fetchError, setFetchError] = useState('');
   const resolveImageUrl = resolveMediaUrl;
-
-  const heroImage =
-    'https://images.pexels.com/photos/2132250/pexels-photo-2132250.jpeg?auto=compress&cs=tinysrgb&w=1600';
 
   useEffect(() => {
     const fetchData = async () => {

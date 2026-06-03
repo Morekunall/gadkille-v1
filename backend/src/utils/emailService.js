@@ -97,37 +97,50 @@ const sendVerificationEmail = async ({ email, name, otp, verifyToken }) => {
 };
 
 const emailLayout = (title, bodyHtml) => `
-  <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#1E3E45;line-height:1.5">
+  <div style="font-family:system-ui,-apple-system,sans-serif;max-width:520px;margin:0 auto;line-height:1.55">
     <div style="background:linear-gradient(135deg,#2F6D66,#1E3E45);padding:20px 24px;border-radius:12px 12px 0 0">
       <p style="margin:0;color:#fff;font-size:18px;font-weight:600">GadKille</p>
       <p style="margin:4px 0 0;color:#EAF2EE;font-size:13px">${escapeHtml(title)}</p>
     </div>
-    <div style="padding:24px;border:1px solid #EAF2EE;border-top:none;border-radius:0 0 12px 12px;background:#fff">
+    <div style="padding:24px;background:#2a2a2a;color:#e8e8e8;border:1px solid #3a3a3a;border-top:none;border-radius:0 0 12px 12px">
       ${bodyHtml}
       <p style="margin:24px 0 0;font-size:12px;color:#888">— Team GadKille</p>
     </div>
   </div>
 `;
 
-const sendWelcomeEmail = async ({ email, name }) => {
+const ctaButton = (href, label) => `
+  <p style="margin-top:22px;text-align:center">
+    <a href="${href}" style="display:inline-block;background:#2F6D66;color:#fff;text-decoration:none;padding:12px 28px;border-radius:999px;font-weight:600;font-size:14px">${escapeHtml(label)}</a>
+  </p>
+`;
+
+const summaryBox = (rowsHtml) => `
+  <div style="background:#1e3338;border-radius:12px;padding:16px;margin:18px 0;border:1px solid #3d5a5e">
+    <p style="margin:0 0 12px;font-size:11px;text-transform:uppercase;color:#6eb5a8;font-weight:700;letter-spacing:0.06em">Booking summary</p>
+    ${rowsHtml}
+  </div>
+`;
+
+const sendAccountCreatedEmail = async ({ email, name }) => {
   const dashboardLink = `${frontendUrl()}/dashboard`;
-  const subject = 'Welcome to GadKille — your account is ready!';
-  const text = `Hi ${name},\n\nWelcome to GadKille! Your email is verified and your account is active.\n\nExplore forts, book stays, guides and cabs, and plan your next adventure.\n\nDashboard: ${dashboardLink}\n\nHappy travels!\nTeam GadKille`;
+  const subject = 'Your GadKille account has been created';
+  const text = `Hi ${name},\n\nYour GadKille account has been created successfully.\n\nDashboard: ${dashboardLink}\n\n— Team GadKille`;
 
   const html = emailLayout(
-    'Welcome aboard',
+    'Account created',
     `
-      <p>Hi ${escapeHtml(name)},</p>
-      <p>Your account has been created successfully. We're glad to have you on GadKille!</p>
-      <p>You can now explore historic forts, book <strong>hotels</strong>, <strong>guides</strong>, and <strong>cabs</strong>, and manage everything from your dashboard.</p>
-      <p style="margin-top:20px">
-        <a href="${dashboardLink}" style="display:inline-block;background:#2F6D66;color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:600">Go to your dashboard</a>
-      </p>
+      <p style="margin:0 0 12px">Hi ${escapeHtml(name)},</p>
+      <p style="margin:0 0 12px">Your GadKille account has been <strong style="color:#6eb5a8">created successfully</strong>.</p>
+      <p style="margin:0;color:#c8c8c8">Explore forts, book hotels, guides, and cabs from your dashboard.</p>
+      ${ctaButton(dashboardLink, 'Go to your dashboard')}
     `
   );
 
   return sendMail({ to: email, subject, text, html });
 };
+
+const sendWelcomeEmail = sendAccountCreatedEmail;
 
 const BOOKING_TYPE_LABELS = {
   stay: { service: 'Hotel / Stay', short: 'hotel stay' },
@@ -167,15 +180,17 @@ const buildBookingDetailsHtml = (bookingType, details = {}) => {
     if (details.vehicle.driverName) rows.push(['Driver', details.vehicle.driverName]);
     if (details.vehicle.pricePerDay) rows.push(['Price/day', `₹${details.vehicle.pricePerDay}`]);
   }
-  if (!rows.length) return '<p>Your booking details are saved in your dashboard.</p>';
+  if (!rows.length) {
+    return '<p style="margin:12px 0 0;color:#aaa;font-size:14px">Full details are saved in your dashboard.</p>';
+  }
   return `
-    <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:12px">
+    <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:8px">
       ${rows
         .map(
           ([label, value]) => `
         <tr>
-          <td style="padding:8px 0;color:#666;border-bottom:1px solid #EAF2EE;width:40%">${escapeHtml(label)}</td>
-          <td style="padding:8px 0;font-weight:500;border-bottom:1px solid #EAF2EE">${escapeHtml(String(value))}</td>
+          <td style="padding:8px 0;color:#9aa;border-bottom:1px solid #3d5a5e;width:42%">${escapeHtml(label)}</td>
+          <td style="padding:8px 0;font-weight:500;color:#eee;border-bottom:1px solid #3d5a5e">${escapeHtml(String(value))}</td>
         </tr>`
         )
         .join('')}
@@ -193,25 +208,23 @@ const sendBookingCongratulationsEmail = async ({ email, name, booking }) => {
   const dateStr = formatBookingDate(booking.date);
   const dashboardLink = `${frontendUrl()}/dashboard`;
 
-  const subject = `Congratulations! Your ${typeInfo.service} booking is confirmed — GadKille`;
-  const text = `Hi ${name},\n\nCongratulations! Your ${typeInfo.short} has been accepted by our team.\n\nFort: ${fortName}${fortLocation ? `, ${fortLocation}` : ''}\nDate: ${dateStr}\nService: ${typeInfo.service}\n\nView your booking: ${dashboardLink}\n\nWe look forward to your adventure!\nTeam GadKille`;
+  const subject = `Booking confirmed — ${typeInfo.service} · GadKille`;
+  const text = `Hi ${name},\n\nGreat news! Your ${typeInfo.service} request has been accepted and confirmed.\n\nFort: ${fortName}${fortLocation ? `, ${fortLocation}` : ''}\nService: ${typeInfo.service}\nDate: ${dateStr}\n\nView bookings: ${dashboardLink}\n\n— Team GadKille`;
+
+  const summaryRows = `
+    <p style="margin:0 0 6px"><strong style="color:#eee">Fort:</strong> <span style="color:#ccc">${escapeHtml(fortName)}${fortLocation ? `, ${escapeHtml(fortLocation)}` : ''}</span></p>
+    <p style="margin:0 0 6px"><strong style="color:#eee">Service:</strong> <span style="color:#ccc">${escapeHtml(typeInfo.service)}</span></p>
+    <p style="margin:0"><strong style="color:#eee">Date:</strong> <span style="color:#ccc">${escapeHtml(dateStr)}</span></p>
+  `;
 
   const html = emailLayout(
-    'Congratulations!',
+    'Booking confirmed',
     `
-      <p>Hi ${escapeHtml(name)},</p>
-      <p style="font-size:20px;font-weight:700;color:#2F6D66;margin:12px 0">Congratulations!</p>
-      <p>Your <strong>${escapeHtml(typeInfo.service)}</strong> request has been <strong style="color:#2F6D66">accepted</strong> by the GadKille team. Your booking is confirmed — get ready for an amazing fort adventure!</p>
-      <div style="background:#EAF2EE;border-radius:12px;padding:16px;margin:16px 0">
-        <p style="margin:0 0 8px;font-size:12px;text-transform:uppercase;color:#2F6D66;font-weight:600">Your booking</p>
-        <p style="margin:0 0 4px"><strong>Fort:</strong> ${escapeHtml(fortName)}${fortLocation ? `, ${escapeHtml(fortLocation)}` : ''}</p>
-        <p style="margin:0 0 4px"><strong>Service:</strong> ${escapeHtml(typeInfo.service)}</p>
-        <p style="margin:0"><strong>Date:</strong> ${escapeHtml(dateStr)}</p>
-      </div>
+      <p style="margin:0 0 12px">Hi ${escapeHtml(name)},</p>
+      <p style="margin:0 0 12px">Great news! Your <strong>${escapeHtml(typeInfo.service)}</strong> request has been <strong style="color:#6eb5a8">accepted and confirmed</strong>.</p>
+      ${summaryBox(summaryRows)}
       ${buildBookingDetailsHtml(booking.bookingType, booking.details)}
-      <p style="margin-top:20px">
-        <a href="${dashboardLink}" style="display:inline-block;background:#2F6D66;color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:600">View my bookings</a>
-      </p>
+      ${ctaButton(dashboardLink, 'View my bookings')}
     `
   );
 
@@ -239,6 +252,7 @@ const sendPasswordResetEmail = async ({ email, name, resetToken }) => {
 module.exports = {
   sendVerificationEmail,
   sendPasswordResetEmail,
+  sendAccountCreatedEmail,
   sendWelcomeEmail,
   sendBookingCongratulationsEmail,
   sendBookingConfirmationEmail,

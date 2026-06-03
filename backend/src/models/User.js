@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema(
     emailVerificationExpires: { type: Date, select: false },
     passwordResetTokenHash: { type: String, select: false },
     passwordResetExpires: { type: Date, select: false },
+    accountCreatedEmailSent: { type: Boolean, default: false, select: false },
     loginAttempts: { type: Number, default: 0, select: false },
     lockUntil: { type: Date, select: false },
     bookings: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Booking' }],

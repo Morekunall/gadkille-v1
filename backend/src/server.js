@@ -122,6 +122,13 @@ const startServer = async () => {
   try {
     await connectDB();
     await ensureAdminUser();
+
+    const isProd = process.env.NODE_ENV === 'production';
+    if (!isProd || process.env.SEED_FORTS_ON_START === 'true') {
+      await ensureSeedForts();
+    } else {
+      console.log('[seed] Skipped in production (deleted forts stay deleted). Set SEED_FORTS_ON_START=true only for empty DB demo.');
+    }
   } catch (error) {
     console.error('Startup initialization error:', error.message);
   }

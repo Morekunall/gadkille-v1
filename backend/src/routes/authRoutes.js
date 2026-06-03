@@ -12,7 +12,7 @@ const {
 } = require('../utils/emailService');
 const crypto = require('crypto');
 const querystring = require('querystring');
-const { sendWelcomeEmailSafe } = require('../utils/sendUserEmails');
+const { sendAccountCreatedEmailSafe } = require('../utils/sendUserEmails');
 const { getAuthJwtSecret } = require('../utils/jwtSecret');
 const {
   handleValidation,
@@ -337,11 +337,13 @@ router.post(
       await user.save();
       await user.resetLoginAttempts();
 
-      sendWelcomeEmailSafe(user);
+      sendAccountCreatedEmailSafe(user).catch((err) =>
+        console.error('[auth] Account created email error:', err.message)
+      );
 
       const token = generateToken(user);
       res.json({
-        message: 'Email verified successfully',
+        message: 'Email verified successfully. Check your inbox for account confirmation.',
         token,
         user: sanitizeUser(user),
       });
@@ -377,11 +379,13 @@ router.get('/verify-email', authLimiter, verifyLimiter, async (req, res) => {
     await user.save();
     await user.resetLoginAttempts();
 
-    sendWelcomeEmailSafe(user);
+    sendAccountCreatedEmailSafe(user).catch((err) =>
+      console.error('[auth] Account created email error:', err.message)
+    );
 
     const jwtToken = generateToken(user);
     res.json({
-      message: 'Email verified successfully',
+      message: 'Email verified successfully. Check your inbox for account confirmation.',
       token: jwtToken,
       user: sanitizeUser(user),
     });
@@ -486,6 +490,10 @@ router.post(
       }
 
       await user.resetLoginAttempts();
+
+      sendAccountCreatedEmailSafe(user).catch((err) =>
+        console.error('[auth] Account created email on login:', err.message)
+      );
 
       const token = generateToken(user);
       res.json({
@@ -645,8 +653,12 @@ router.get('/google/callback', async (req, res) => {
         email: emailNorm,
         password: hashedPassword,
         phone: '',
+        authProvider: 'google',
         isEmailVerified: true,
       });
+      sendAccountCreatedEmailSafe(user).catch((err) =>
+        console.error('[Google OAuth] account created email error:', err.message)
+      );
     } else if (!user.isEmailVerified) {
       console.log('[Google OAuth] Marking email as verified for existing user:', emailNorm);
       user.isEmailVerified = true;
@@ -777,13 +789,13 @@ router.post(
       }
       await user.save();
 
-      if (!hadPhone) {
-        sendRegistrationCompleteEmailSafe(user);
-      }
+      sendAccountCreatedEmailSafe(user).catch((err) =>
+        console.error('[complete-profile] account created email error:', err.message)
+      );
 
       const token = generateToken(user);
       res.json({
-        message: 'Profile completed successfully',
+        message: 'Profile completed successfully. Check your inbox for account confirmation.',
         token,
         user: sanitizeUser(user),
       });

@@ -59,17 +59,20 @@ router.put(
       .populate('fortId', 'name location slug');
 
     let congratulationsEmailSent = false;
+    let emailError = null;
     if (requestStatus === 'accepted' && existing.requestStatus !== 'accepted') {
       if (!booking.userId?.email) {
         const customerId = booking.userId?._id || booking.userId;
         const customer = await User.findById(customerId).select('name email');
         if (customer) booking.userId = customer;
       }
-      congratulationsEmailSent = await sendBookingCongratulationsSafe(booking);
+      const emailResult = await sendBookingCongratulationsSafe(booking);
+      congratulationsEmailSent = emailResult.sent;
+      emailError = emailResult.error || null;
     }
 
     const payload = booking.toObject();
-    res.json({ ...payload, congratulationsEmailSent });
+    res.json({ ...payload, congratulationsEmailSent, emailError });
   })
 );
 
